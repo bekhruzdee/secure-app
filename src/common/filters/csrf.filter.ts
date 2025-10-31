@@ -1,5 +1,10 @@
 // src/common/filters/csrf.filter.ts
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
@@ -17,7 +22,8 @@ export class CsrfExceptionFilter implements ExceptionFilter {
         statusCode: 403,
         success: false,
         error: 'Forbidden',
-        message: 'CSRF token is missing or invalid. Please refresh the page and try again.',
+        message:
+          'CSRF token is missing or invalid. Please refresh the page and try again.',
         path: req.url,
       });
     }
@@ -32,11 +38,7 @@ export class CsrfExceptionFilter implements ExceptionFilter {
       return res.status(status).json({
         statusCode: status,
         success: false,
-        ...(
-          typeof body === 'string'
-            ? { message: body }
-            : body
-        ),
+        ...(typeof body === 'string' ? { message: body } : body),
         path: req.url,
       });
     }

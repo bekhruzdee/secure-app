@@ -1,4 +1,3 @@
-// src/main.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
@@ -49,13 +48,12 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // DTO'da bo'lmagan maydonlarni olib tashlaydi
-      forbidNonWhitelisted: true, // noma'lum maydonlar bo'lsa xato qaytaradi
-      transform: true, // avtomatik tipga o'giradi (string -> number va hk)
+      whitelist: true, 
+      forbidNonWhitelisted: true, 
+      transform: true,
     }),
   );
 
-  // 🚀 Server start
   const PORT = process.env.PORT || 3000;
   await app.listen(PORT);
   console.log(`🚀 Server running on http://localhost:${PORT}`);

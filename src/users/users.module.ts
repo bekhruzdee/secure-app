@@ -38,7 +38,8 @@ import { User } from './entities/user.entity';
         global: true,
         secret: config.get<string>('JWT_SECRET') || 'default_secret',
         signOptions: {
-          expiresIn: config.get<string>('JWT_REFRESH_EXPIRES_IN') as any || '7d',
+          expiresIn:
+            (config.get<string>('JWT_REFRESH_EXPIRES_IN') as any) || '7d',
         },
       }),
     }),

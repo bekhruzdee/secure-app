@@ -26,7 +26,13 @@
 //   @IsIn(['admin'])
 //   role: string;
 // }
-import { IsNotEmpty, IsString, IsEmail, MinLength, IsIn } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsEmail,
+  MinLength,
+  IsIn,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import sanitizeHtml from 'sanitize-html';
 
