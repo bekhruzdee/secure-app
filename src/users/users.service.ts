@@ -14,12 +14,43 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  // SQL Injection himoya bilan username bo‘yicha qidirish
-  async findOneByUsername(username: string): Promise<User | null> {
-    return await this.usersRepository
+  // async findOneByUsername(username: string): Promise<User | null> {
+  //   return await this.usersRepository
+  //     .createQueryBuilder('u')
+  //     .where('u.username = :username', { username })
+  //     .getOne();
+  // }
+
+  // type: Promise<Omit<User, 'password'> | null>
+  async findOneByUsername(
+    username: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: Omit<User, 'password'>;
+  }> {
+    const user = await this.usersRepository
       .createQueryBuilder('u')
-      .where('u.username = :username', { username })
+      .select(['u.id', 'u.username', 'u.role', 'u.createdAt', 'u.updatedAt'])
+      .where('u.username ILIKE :username', { username }) // ILIKE case-insensitive
       .getOne();
+
+    if (!user) {
+      return {
+        success: false,
+        message: `User with username "${username}" not found ⚠️`,
+      };
+    }
+
+    const { password, ...safe } = user as unknown as {
+      password?: unknown;
+    } & Omit<User, 'password'>;
+
+    return {
+      success: true,
+      message: 'User retrieved successfully ✅',
+      data: safe,
+    };
   }
 
   async createAdmin(

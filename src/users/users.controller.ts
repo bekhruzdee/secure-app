@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -32,6 +33,11 @@ export class UsersController {
   @Get(`all`)
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @Get('search')
+  async search(@Query('username') username: string) {
+    return this.usersService.findOneByUsername(username);
   }
 
   // @UseGuards(AuthGuard, RolesGuard)
