@@ -14,42 +14,36 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  // async findOneByUsername(username: string): Promise<User | null> {
-  //   return await this.usersRepository
-  //     .createQueryBuilder('u')
-  //     .where('u.username = :username', { username })
-  //     .getOne();
-  // }
-
-  // type: Promise<Omit<User, 'password'> | null>
-  async findOneByUsername(
-    username: string,
-  ): Promise<{
+  async findOneByUsername(username: string): Promise<{
     success: boolean;
     message: string;
     data?: Omit<User, 'password'>;
   }> {
+    if (!username?.trim()) {
+      return {
+        success: false,
+        message: 'Username query parameter is required and cannot be empty ⚠️',
+      };
+    }
+
     const user = await this.usersRepository
       .createQueryBuilder('u')
       .select(['u.id', 'u.username', 'u.role', 'u.createdAt', 'u.updatedAt'])
-      .where('u.username ILIKE :username', { username }) // ILIKE case-insensitive
+      .where('u.username ILIKE :username', { username: `%${username}%` }) 
       .getOne();
 
     if (!user) {
       return {
         success: false,
-        message: `User with username "${username}" not found ⚠️`,
+        message: `User with username containing "${username}" not found ⚠️`,
       };
     }
 
-    const { password, ...safe } = user as unknown as {
-      password?: unknown;
-    } & Omit<User, 'password'>;
-
+    const { password, ...safeUser } = user as any;
     return {
       success: true,
-      message: 'User retrieved successfully ✅',
-      data: safe,
+      message: 'User found successfully ✅',
+      data: safeUser,
     };
   }
 
@@ -58,10 +52,10 @@ export class UsersService {
   ): Promise<{ success: boolean; message: string; data?: User }> {
     const existingUser = await this.findOneByUsername(createAdminDto.username);
 
-    if (existingUser) {
+    if (existingUser.success) {
       return {
         success: false,
-        message: 'User already exists❌',
+        message: 'User already exists',
       };
     }
 
@@ -74,10 +68,12 @@ export class UsersService {
 
     const savedAdmin = await this.usersRepository.save(newAdmin);
 
+    const { password, ...safeAdmin } = savedAdmin;
+
     return {
       success: true,
-      message: 'Admin created successfully✅',
-      data: savedAdmin,
+      message: 'Admin created successfully',
+      data: safeAdmin as User,
     };
   }
 

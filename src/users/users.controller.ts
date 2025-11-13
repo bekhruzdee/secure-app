@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { RolesGuard } from 'src/auth/role.guard';
+import { SearchUserDto } from './dto/search-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -36,8 +37,8 @@ export class UsersController {
   }
 
   @Get('search')
-  async search(@Query('username') username: string) {
-    return this.usersService.findOneByUsername(username);
+  async search(@Query() query: SearchUserDto) {
+    return this.usersService.findOneByUsername(query.username);
   }
 
   // @UseGuards(AuthGuard, RolesGuard)
