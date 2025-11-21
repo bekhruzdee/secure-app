@@ -1,26 +1,22 @@
-import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
+import { PipeTransform, Injectable, ArgumentMetadata } from '@nestjs/common';
 import sanitizeHtml from 'sanitize-html';
 
 @Injectable()
 export class SanitizePipe implements PipeTransform {
   transform(value: any, metadata: ArgumentMetadata) {
-    if (typeof value === 'string') {
-      return sanitizeHtml(value, {
-        allowedTags: [],
-        allowedAttributes: {},
-      }).trim();
+    if (metadata.type !== 'body' || typeof value !== 'object') {
+      return value;
     }
-    if (value && typeof value === 'object') {
-      const out: any = {};
-      for (const key of Object.keys(value)) {
-        const v = value[key];
-        out[key] =
-          typeof v === 'string'
-            ? sanitizeHtml(v, { allowedTags: [], allowedAttributes: {} }).trim()
-            : v;
-      }
-      return out;
+
+    const sanitized = {};
+
+    for (const key of Object.keys(value)) {
+      const field = value[key];
+
+      sanitized[key] =
+        typeof field === 'string' ? sanitizeHtml(field.trim()) : field;
     }
-    return value;
+
+    return sanitized;
   }
 }

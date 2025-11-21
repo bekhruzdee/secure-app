@@ -26,14 +26,12 @@ export class AuthController {
   }
 
   // 🔹 Register endpoint, XSS sanitization bilan
-  @UsePipes(new SanitizePipe())
   @Post('register')
   register(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.create(createAuthDto);
   }
 
   // 🔹 Login endpoint, XSS sanitization bilan
-  @UsePipes(new SanitizePipe())
   @Post('login')
   login(
     @Body() loginDto: { username: string; password: string },

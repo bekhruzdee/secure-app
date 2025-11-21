@@ -4,6 +4,7 @@ import {
   IsEmail,
   MinLength,
   IsIn,
+  Matches,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import sanitizeHtml from 'sanitize-html';
@@ -21,7 +22,10 @@ export class CreateAdminDto {
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @Matches(/^(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).+$/, {
+    message: 'Password must contain at least one special character',
+  })
   password: string;
 
   @IsNotEmpty()
@@ -29,3 +33,4 @@ export class CreateAdminDto {
   @IsIn(['admin'])
   role: string;
 }
+

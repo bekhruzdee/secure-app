@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { CsrfExceptionFilter } from './common/filters/csrf.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { SanitizePipe } from './common/pipes/sanitize.pipe';
 
 // ⚠️ csurf CommonJS moduli, shuning uchun require ishlatiladi
 const csurf = require('csurf');
@@ -46,13 +47,15 @@ async function bootstrap() {
   // 🔹 NestJS ExceptionFilter lar uchun (agar kerak bo‘lsa)
   app.useGlobalFilters(new CsrfExceptionFilter());
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true, 
-      forbidNonWhitelisted: true, 
-      transform: true,
-    }),
-  );
+app.useGlobalPipes(
+  new SanitizePipe(),  // 1) XSS sanitizatsiya
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+);
+
 
   const PORT = process.env.PORT || 3000;
   await app.listen(PORT);
