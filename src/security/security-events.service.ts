@@ -23,7 +23,9 @@ export class SecurityEventsService {
   }): Promise<void> {
     try {
       const ip =
-        (input.req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+        (input.req.headers['x-forwarded-for'] as string)
+          ?.split(',')[0]
+          ?.trim() ||
         input.req.ip ||
         null;
 
@@ -40,7 +42,10 @@ export class SecurityEventsService {
       await this.securityEventsRepository.save(securityEvent);
     } catch (error) {
       // Logging must never break request handling flow.
-      console.error('Failed to persist security event:', error?.message || error);
+      console.error(
+        'Failed to persist security event:',
+        error?.message || error,
+      );
     }
   }
 
@@ -49,7 +54,9 @@ export class SecurityEventsService {
     const from = new Date();
     from.setDate(from.getDate() - safeDays);
 
-    const countByTypeSince = async (type: SecurityEventType): Promise<number> => {
+    const countByTypeSince = async (
+      type: SecurityEventType,
+    ): Promise<number> => {
       return this.securityEventsRepository
         .createQueryBuilder('event')
         .where('event.type = :type', { type })
@@ -57,12 +64,13 @@ export class SecurityEventsService {
         .getCount();
     };
 
-    const [totalUsers, blockedXss, blockedCsrf, blockedSqlInjection] = await Promise.all([
-      this.usersRepository.count(),
-      countByTypeSince(SecurityEventType.XSS),
-      countByTypeSince(SecurityEventType.CSRF),
-      countByTypeSince(SecurityEventType.SQL_INJECTION),
-    ]);
+    const [totalUsers, blockedXss, blockedCsrf, blockedSqlInjection] =
+      await Promise.all([
+        this.usersRepository.count(),
+        countByTypeSince(SecurityEventType.XSS),
+        countByTypeSince(SecurityEventType.CSRF),
+        countByTypeSince(SecurityEventType.SQL_INJECTION),
+      ]);
 
     return {
       rangeDays: safeDays,
@@ -102,7 +110,8 @@ export class SecurityEventsService {
   }
 
   async getRecent(limit: number) {
-    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 100) : 25;
+    const safeLimit =
+      Number.isFinite(limit) && limit > 0 ? Math.min(limit, 100) : 25;
 
     const events = await this.securityEventsRepository.find({
       order: { createdAt: 'DESC' },

@@ -22,21 +22,32 @@ export class SecurityEventsController {
     @Query('days') days = '7',
     @Query('groupBy') groupBy: 'hour' | 'day' = 'day',
   ) {
-    const result = await this.securityEventsService.getTimeline(Number(days), groupBy);
-    console.log(`📈 Timeline API called with days=${days}, groupBy=${groupBy}`, `rows=${result.length}`);
+    const result = await this.securityEventsService.getTimeline(
+      Number(days),
+      groupBy,
+    );
+    console.log(
+      `📈 Timeline API called with days=${days}, groupBy=${groupBy}`,
+      `rows=${result.length}`,
+    );
     return result;
   }
 
   @Get('recent')
   async getRecent(@Query('limit') limit = '25') {
     const result = await this.securityEventsService.getRecent(Number(limit));
-    console.log(`🕐 Recent API called with limit=${limit}`, `events=${result.length}`);
+    console.log(
+      `🕐 Recent API called with limit=${limit}`,
+      `events=${result.length}`,
+    );
     return result;
   }
 
   @Get('detailed-stats')
   async getDetailedStats(@Query('days') days = '7') {
-    const result = await this.securityEventsService.getDetailedStats(Number(days));
+    const result = await this.securityEventsService.getDetailedStats(
+      Number(days),
+    );
     console.log(`📋 Detailed stats API called with days=${days}`, {
       totalEvents: result.totalEvents,
       typeCount: result.typeDistribution.length,

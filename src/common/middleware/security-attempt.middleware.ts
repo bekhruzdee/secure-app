@@ -7,7 +7,8 @@ import { SecurityEventType } from 'src/security/security-event-type.enum';
 export class SecurityAttemptMiddleware implements NestMiddleware {
   constructor(private readonly securityEventsService: SecurityEventsService) {}
 
-  private readonly xssPattern = /<\s*script|on\w+\s*=|javascript:|<\s*img|<\s*iframe/i;
+  private readonly xssPattern =
+    /<\s*script|on\w+\s*=|javascript:|<\s*img|<\s*iframe/i;
   private readonly sqlInjectionPattern =
     /(\bUNION\b\s+\bSELECT\b|\bSELECT\b\s+.+\s+\bFROM\b|\bDROP\b\s+\bTABLE\b|\bINSERT\b\s+\bINTO\b|\bDELETE\b\s+\bFROM\b|--|;\s*(drop|select|insert|delete|update)|\bOR\b\s+1=1|\bAND\b\s+1=1)/i;
 

@@ -14,8 +14,13 @@ dotenv.config();
 export class AuthGuard implements CanActivate {
   constructor(private jwtService: JwtService) {}
 
-  private resolveRoleByUsername(username: string, currentRole?: string): string {
-    const normalizedUsername = String(username || '').trim().toLowerCase();
+  private resolveRoleByUsername(
+    username: string,
+    currentRole?: string,
+  ): string {
+    const normalizedUsername = String(username || '')
+      .trim()
+      .toLowerCase();
     const superAdminFromEnv = String(
       process.env.SUPER_ADMIN_USERNAME ?? process.env.SUPERADMIN_USERNAME ?? '',
     )
@@ -56,7 +61,10 @@ export class AuthGuard implements CanActivate {
       });
 
       const { iat, exp, ...userData } = payload;
-      userData.role = this.resolveRoleByUsername(userData.username, userData.role);
+      userData.role = this.resolveRoleByUsername(
+        userData.username,
+        userData.role,
+      );
       request['user'] = userData;
     } catch (error) {
       throw new UnauthorizedException('Invalid token or token expired');
