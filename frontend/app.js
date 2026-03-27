@@ -33,8 +33,9 @@ const refs = {
 
 const chartCtx = document.getElementById('timelineChart');
 let timelineChart;
-let accessToken = sessionStorage.getItem('access_token') || '';
 let csrfToken = '';
+let refreshInFlight = null;
+let accessToken = '';
 const API_BASE = (() => {
   const stored = localStorage.getItem('api_base');
   if (stored) {
@@ -91,17 +92,6 @@ async function ensureCsrfToken() {
   return csrfToken;
 }
 
-function getAuthHeaders(extra = {}) {
-  if (!accessToken) {
-    throw new Error('Login qiling');
-  }
-
-  return {
-    Authorization: `Bearer ${accessToken}`,
-    ...extra,
-  };
-}
-
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, {
     credentials: 'include',
@@ -110,10 +100,62 @@ async function fetchJson(url, options = {}) {
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Request failed (${response.status}): ${body}`);
+    const error = new Error(`Request failed (${response.status}): ${body}`);
+    error.status = response.status;
+    throw error;
   }
 
   return response.json();
+}
+
+function getAuthHeaders(extra = {}) {
+  if (!accessToken) {
+    return { ...extra };
+  }
+
+  return {
+    Authorization: `Bearer ${accessToken}`,
+    ...extra,
+  };
+}
+
+async function refreshSession() {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  refreshInFlight = postJson(apiUrl('/auth/refresh'), {})
+    .then((result) => {
+      if (result && result.access_token) {
+        accessToken = result.access_token;
+      }
+      return result;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
+}
+
+async function fetchAuthJson(url, options = {}, allowRefresh = true) {
+  const requestOptions = {
+    ...options,
+    headers: getAuthHeaders(options.headers || {}),
+  };
+
+  try {
+    return await fetchJson(url, requestOptions);
+  } catch (error) {
+    const status = Number(error?.status || 0);
+
+    if (allowRefresh && status === 401) {
+      await refreshSession();
+      return fetchAuthJson(url, options, false);
+    }
+
+    throw error;
+  }
 }
 
 async function postJson(url, body) {
@@ -129,14 +171,9 @@ async function postJson(url, body) {
   });
 }
 
-function saveSession(token) {
-  accessToken = token;
-  sessionStorage.setItem('access_token', token);
-}
-
 function clearSession() {
+  csrfToken = '';
   accessToken = '';
-  sessionStorage.removeItem('access_token');
 }
 
 function updateCards(summary) {
@@ -214,11 +251,9 @@ function renderDetailedStats(stats) {
 }
 
 async function fetchDetailedStats(days) {
-  const headers = getAuthHeaders();
   try {
-    return await fetchJson(
+    return await fetchAuthJson(
       apiUrl(`/admin/metrics/detailed-stats?days=${encodeURIComponent(days)}`),
-      { headers },
     );
   } catch (error) {
     console.error('Failed to fetch detailed stats:', error);
@@ -357,8 +392,7 @@ function renderRecentEvents(rows) {
 }
 
 async function fetchUserCount() {
-  const headers = getAuthHeaders();
-  const data = await fetchJson(apiUrl('/users/count'), { headers });
+  const data = await fetchAuthJson(apiUrl('/users/count'));
   return Number(data.total || 0);
 }
 
@@ -368,22 +402,17 @@ async function refreshAdminDashboard() {
   setRecentStatus('Loading recent events...');
   refs.topStatsText.textContent = 'Loading...';
 
-  const headers = getAuthHeaders();
   const [summaryRes, timelineRes, recentRes, detailedRes] =
     await Promise.allSettled([
-      fetchJson(
+      fetchAuthJson(
         apiUrl(`/admin/metrics/summary?days=${encodeURIComponent(days)}`),
-        { headers },
       ),
-      fetchJson(
+      fetchAuthJson(
         apiUrl(
           `/admin/metrics/timeline?days=${encodeURIComponent(days)}&groupBy=day`,
         ),
-        {
-          headers,
-        },
       ),
-      fetchJson(apiUrl('/admin/metrics/recent?limit=30'), { headers }),
+      fetchAuthJson(apiUrl('/admin/metrics/recent?limit=30')),
       fetchDetailedStats(days),
     ]);
 
@@ -472,7 +501,7 @@ async function login(username, password) {
     },
     body: JSON.stringify({ username, password }),
   });
-  saveSession(data.access_token);
+  accessToken = data.access_token || '';
   await showDashboardForUser(data.userData);
 }
 
@@ -481,14 +510,8 @@ async function register(username, password) {
 }
 
 async function restoreSession() {
-  if (!accessToken) {
-    return;
-  }
-
   try {
-    const me = await fetchJson(apiUrl('/auth/me'), {
-      headers: getAuthHeaders(),
-    });
+    const me = await fetchAuthJson(apiUrl('/auth/me'));
     await showDashboardForUser(me);
   } catch (error) {
     clearSession();

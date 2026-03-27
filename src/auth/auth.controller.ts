@@ -6,13 +6,11 @@ import {
   UseGuards,
   Req,
   Res,
-  UsePipes,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { AuthGuard } from './auth.guard';
 import type { Response, Request } from 'express';
-import { SanitizePipe } from 'src/common/pipes/sanitize.pipe';
 
 @Controller('auth')
 export class AuthController {
@@ -40,12 +38,18 @@ export class AuthController {
     return this.authService.login(loginDto, res);
   }
 
+  @Post('refresh')
+  refresh(@Req() req: Request, @Res() res: Response) {
+    const refreshToken = req.cookies?.refresh_token as string | undefined;
+    return this.authService.refreshSession(refreshToken, res);
+  }
+
   // 🔹 Logout endpoint, faqat auth guard bilan
   @Post('logout')
   @UseGuards(AuthGuard)
-  logout(@Res() res: Response) {
-    const result = this.authService.logout();
-    res.clearCookie('refresh_token', { path: '/', sameSite: 'lax' }); // token cookie-ni tozalash
+  logout(@Req() req: Request, @Res() res: Response) {
+    const userId = (req as any).user?.id as string | undefined;
+    const result = this.authService.logout(userId, res);
     return res.status(200).json(result);
   }
 

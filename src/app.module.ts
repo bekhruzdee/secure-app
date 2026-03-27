@@ -10,6 +10,7 @@ import { SecurityEvent } from './security/security-event.entity';
 import { SecurityEventsModule } from './security/security-events.module';
 import { SecurityAttemptMiddleware } from './common/middleware/security-attempt.middleware';
 import { CsrfExceptionFilter } from './common/filters/csrf.filter';
+import { LoginRateLimit } from './common/middleware/login-rate-limit';
 
 @Module({
   imports: [
@@ -41,6 +42,10 @@ import { CsrfExceptionFilter } from './common/filters/csrf.filter';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(LoginRateLimit)
+      .forRoutes({ path: 'auth/login', method: RequestMethod.POST });
+
     consumer
       .apply(SecurityAttemptMiddleware)
       .exclude({ path: 'auth/csrf-token', method: RequestMethod.GET })
