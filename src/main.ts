@@ -25,9 +25,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (
-        !origin
-      ) {
+      if (!origin) {
         callback(null, true);
         return;
       }
@@ -37,7 +35,10 @@ async function bootstrap() {
         return;
       }
 
-      if (isDev && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      if (
+        isDev &&
+        (origin.includes('localhost') || origin.includes('127.0.0.1'))
+      ) {
         callback(null, true);
         return;
       }
@@ -98,16 +99,15 @@ async function bootstrap() {
   // 🔹 NestJS ExceptionFilter with DI
   app.useGlobalFilters(app.get(CsrfExceptionFilter));
 
-app.useGlobalPipes(
-  new SanitizePipe(), // 1) XSS sanitizatsiya
-  new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    stopAtFirstError: true,
-    transform: true,
-  }),
-);
-
+  app.useGlobalPipes(
+    new SanitizePipe(), // 1) XSS sanitizatsiya
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      stopAtFirstError: true,
+      transform: true,
+    }),
+  );
 
   const PORT = process.env.PORT || 3000;
   await app.listen(PORT);

@@ -148,7 +148,7 @@ function updateCards(summary) {
 
 function showThreatInfo(threatType) {
   const items = document.querySelectorAll('.threat-item');
-  items.forEach(item => item.classList.add('hidden'));
+  items.forEach((item) => item.classList.add('hidden'));
 
   let infoId = 'xssInfo';
   let title = '🛡️ Security Guide';
@@ -179,8 +179,10 @@ function renderDetailedStats(stats) {
   // Threat Distribution
   refs.threatDist.innerHTML = '';
   if (stats.typeDistribution && stats.typeDistribution.length > 0) {
-    stats.typeDistribution.forEach(item => {
-      refs.threatDist.appendChild(renderDistributionItem(item.type.toUpperCase(), item.count));
+    stats.typeDistribution.forEach((item) => {
+      refs.threatDist.appendChild(
+        renderDistributionItem(item.type.toUpperCase(), item.count),
+      );
     });
   } else {
     refs.threatDist.innerHTML = '<p class="no-data">No threat data yet</p>';
@@ -189,8 +191,10 @@ function renderDetailedStats(stats) {
   // Top Paths
   refs.topPaths.innerHTML = '';
   if (stats.topPaths && stats.topPaths.length > 0) {
-    stats.topPaths.forEach(item => {
-      refs.topPaths.appendChild(renderDistributionItem(item.path || '/unknown', item.count));
+    stats.topPaths.forEach((item) => {
+      refs.topPaths.appendChild(
+        renderDistributionItem(item.path || '/unknown', item.count),
+      );
     });
   } else {
     refs.topPaths.innerHTML = '<p class="no-data">No path data yet</p>';
@@ -199,7 +203,7 @@ function renderDetailedStats(stats) {
   // Top IPs
   refs.topIps.innerHTML = '';
   if (stats.topIps && stats.topIps.length > 0) {
-    stats.topIps.forEach(item => {
+    stats.topIps.forEach((item) => {
       refs.topIps.appendChild(renderDistributionItem(item.ip, item.count));
     });
   } else {
@@ -212,7 +216,10 @@ function renderDetailedStats(stats) {
 async function fetchDetailedStats(days) {
   const headers = getAuthHeaders();
   try {
-    return await fetchJson(apiUrl(`/admin/metrics/detailed-stats?days=${encodeURIComponent(days)}`), { headers });
+    return await fetchJson(
+      apiUrl(`/admin/metrics/detailed-stats?days=${encodeURIComponent(days)}`),
+      { headers },
+    );
   } catch (error) {
     console.error('Failed to fetch detailed stats:', error);
     return { typeDistribution: [], topPaths: [], topIps: [], totalEvents: 0 };
@@ -362,26 +369,40 @@ async function refreshAdminDashboard() {
   refs.topStatsText.textContent = 'Loading...';
 
   const headers = getAuthHeaders();
-  const [summaryRes, timelineRes, recentRes, detailedRes] = await Promise.allSettled([
-    fetchJson(apiUrl(`/admin/metrics/summary?days=${encodeURIComponent(days)}`), { headers }),
-    fetchJson(apiUrl(`/admin/metrics/timeline?days=${encodeURIComponent(days)}&groupBy=day`), {
-      headers,
-    }),
-    fetchJson(apiUrl('/admin/metrics/recent?limit=30'), { headers }),
-    fetchDetailedStats(days),
-  ]);
+  const [summaryRes, timelineRes, recentRes, detailedRes] =
+    await Promise.allSettled([
+      fetchJson(
+        apiUrl(`/admin/metrics/summary?days=${encodeURIComponent(days)}`),
+        { headers },
+      ),
+      fetchJson(
+        apiUrl(
+          `/admin/metrics/timeline?days=${encodeURIComponent(days)}&groupBy=day`,
+        ),
+        {
+          headers,
+        },
+      ),
+      fetchJson(apiUrl('/admin/metrics/recent?limit=30'), { headers }),
+      fetchDetailedStats(days),
+    ]);
 
-  const summary = summaryRes.status === 'fulfilled'
-    ? summaryRes.value
-    : { totalUsers: 0, blocked: { xss: 0, csrf: 0, sqlInjection: 0 } };
+  const summary =
+    summaryRes.status === 'fulfilled'
+      ? summaryRes.value
+      : { totalUsers: 0, blocked: { xss: 0, csrf: 0, sqlInjection: 0 } };
   const timeline = timelineRes.status === 'fulfilled' ? timelineRes.value : [];
   const recent = recentRes.status === 'fulfilled' ? recentRes.value : [];
-  const detailedStats = detailedRes.status === 'fulfilled'
-    ? detailedRes.value
-    : { typeDistribution: [], topPaths: [], topIps: [], totalEvents: 0 };
+  const detailedStats =
+    detailedRes.status === 'fulfilled'
+      ? detailedRes.value
+      : { typeDistribution: [], topPaths: [], topIps: [], totalEvents: 0 };
 
   // 📊 Verify data in console
-  console.log(`%c🔍 Security Data Verification (${new Date().toLocaleTimeString()})`, 'color: #17324f; font-size: 14px; font-weight: bold;');
+  console.log(
+    `%c🔍 Security Data Verification (${new Date().toLocaleTimeString()})`,
+    'color: #17324f; font-size: 14px; font-weight: bold;',
+  );
   console.log(`Range: Last ${days} day(s)`);
   console.log('Summary:', summary);
   console.log('Timeline rows:', timeline.length);
@@ -515,7 +536,7 @@ refs.refreshBtn.addEventListener('click', async () => {
 
 // Threat card click handlers
 const statsCards = document.querySelectorAll('[data-threat]');
-statsCards.forEach(card => {
+statsCards.forEach((card) => {
   card.style.cursor = 'pointer';
   card.addEventListener('click', () => {
     const threatType = card.getAttribute('data-threat');
