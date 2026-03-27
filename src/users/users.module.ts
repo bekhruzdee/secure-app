@@ -12,14 +12,21 @@ import { User } from './entities/user.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        global: true,
-        secret: config.get<string>('JWT_SECRET') || 'default_secret',
-        signOptions: {
-          expiresIn:
-            (config.get<string>('JWT_REFRESH_EXPIRES_IN') as any) || '7d',
-        },
-      }),
+      useFactory: (config: ConfigService) => {
+        const secret = config.get<string>('JWT_SECRET');
+        if (!secret) {
+          throw new Error('JWT_SECRET is required');
+        }
+
+        return {
+          global: true,
+          secret,
+          signOptions: {
+            expiresIn:
+              (config.get<string>('JWT_REFRESH_EXPIRES_IN') as any) || '7d',
+          },
+        };
+      },
     }),
   ],
   controllers: [UsersController],

@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -10,6 +11,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Response } from 'express';
+import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +19,28 @@ export class AuthService {
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     private jwtService: JwtService,
   ) {}
+
+  private resolveRoleByUsername(username: string, currentRole?: string): string {
+    const normalizedUsername = String(username || '').trim().toLowerCase();
+    const superAdminFromEnv = String(
+      process.env.SUPER_ADMIN_USERNAME ?? process.env.SUPERADMIN_USERNAME ?? '',
+    )
+      .trim()
+      .toLowerCase();
+    const managerFromEnv = String(process.env.MANAGER_USERNAME ?? '')
+      .trim()
+      .toLowerCase();
+
+    if (normalizedUsername && normalizedUsername === superAdminFromEnv) {
+      return Role.ADMIN;
+    }
+
+    if (normalizedUsername && normalizedUsername === managerFromEnv) {
+      return Role.MANAGER;
+    }
+
+    return currentRole || 'user';
+  }
 
   async create(createAuthDto: CreateAuthDto) {
     const existingUser = await this.userRepository.findOne({
@@ -40,20 +64,28 @@ export class AuthService {
       username: loginDto.username,
     });
     if (!user) {
-      throw new NotFoundException('User Not Found ⚠️');
+      throw new UnauthorizedException('Invalid credentials');
     }
     const checkPass = await bcrypt.compare(loginDto.password, user.password);
     if (!checkPass) {
-      throw new NotFoundException('Password Error ⚠️');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { id: user.id, username: user.username, role: user.role };
+    const resolvedRole = this.resolveRoleByUsername(user.username, user.role);
+    if (user.role !== resolvedRole) {
+      user.role = resolvedRole;
+      await this.userRepository.save(user);
+    }
+
+    const payload = { id: user.id, username: user.username, role: resolvedRole };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -66,7 +98,21 @@ export class AuthService {
   }
 
   async getAllMyData(payload: any) {
-    const user = await this.userRepository.findOneBy({ id: payload.id });
+    const user = await this.userRepository.findOne({
+      where: { id: payload.id },
+      select: ['id', 'username', 'role', 'createdAt', 'updatedAt'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User Not Found');
+    }
+
+    const resolvedRole = this.resolveRoleByUsername(user.username, user.role);
+    if (user.role !== resolvedRole) {
+      user.role = resolvedRole;
+      await this.userRepository.save(user);
+    }
+
     return user;
   }
 }

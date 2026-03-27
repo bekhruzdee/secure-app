@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateAdminDto } from './dto/create-admin.dto';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 
@@ -44,36 +43,6 @@ export class UsersService {
       success: true,
       message: 'User found successfully ✅',
       data: safeUser,
-    };
-  }
-
-  async createAdmin(
-    createAdminDto: CreateAdminDto,
-  ): Promise<{ success: boolean; message: string; data?: User }> {
-    const existingUser = await this.findOneByUsername(createAdminDto.username);
-
-    if (existingUser.success) {
-      return {
-        success: false,
-        message: 'User already exists',
-      };
-    }
-
-    const hashedPassword = await bcrypt.hash(createAdminDto.password, 10);
-
-    const newAdmin = this.usersRepository.create({
-      ...createAdminDto,
-      password: hashedPassword,
-    });
-
-    const savedAdmin = await this.usersRepository.save(newAdmin);
-
-    const { password, ...safeAdmin } = savedAdmin;
-
-    return {
-      success: true,
-      message: 'Admin created successfully',
-      data: safeAdmin as User,
     };
   }
 

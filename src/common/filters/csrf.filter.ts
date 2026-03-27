@@ -4,11 +4,17 @@ import {
   Catch,
   ArgumentsHost,
   HttpException,
+  Injectable,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { SecurityEventsService } from 'src/security/security-events.service';
+import { SecurityEventType } from 'src/security/security-event-type.enum';
 
 @Catch()
+@Injectable()
 export class CsrfExceptionFilter implements ExceptionFilter {
+  constructor(private readonly securityEventsService: SecurityEventsService) {}
+
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
@@ -16,6 +22,12 @@ export class CsrfExceptionFilter implements ExceptionFilter {
 
     // 🛡️ Handle CSRF errors (missing or invalid token)
     if (exception && exception.code === 'EBADCSRFTOKEN') {
+      void this.securityEventsService.logEvent({
+        type: SecurityEventType.CSRF,
+        req,
+        reason: 'Blocked by CSRF protection',
+      });
+
       console.error('⚠️ CSRF token is missing or invalid:', exception.message);
 
       return res.status(403).json({

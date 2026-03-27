@@ -14,21 +14,28 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    try {
-      if (!user || !user.role) {
-        throw new UnauthorizedException(
-          'User is not authenticated or role is missing',
-        );
-      }
 
-      if (user.role !== 'admin') {
-        throw new UnauthorizedException('You are not allowed');
-      }
-      return true;
-    } catch (error) {
-      throw new UnauthorizedException(error.message);
+    if (!user || !user.role) {
+      throw new UnauthorizedException(
+        'User is not authenticated or role is missing',
+      );
     }
+
+    if (!requiredRoles.includes(user.role)) {
+      throw new UnauthorizedException('You are not allowed');
+    }
+
+    return true;
   }
 }

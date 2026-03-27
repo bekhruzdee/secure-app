@@ -45,7 +45,13 @@ export class AuthController {
   @UseGuards(AuthGuard)
   logout(@Res() res: Response) {
     const result = this.authService.logout();
-    res.clearCookie('refresh_token'); // token cookie-ni tozalash
+    res.clearCookie('refresh_token', { path: '/', sameSite: 'lax' }); // token cookie-ni tozalash
     return res.status(200).json(result);
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  me(@Req() req: Request) {
+    return this.authService.getAllMyData((req as any).user);
   }
 }

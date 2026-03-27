@@ -4,6 +4,8 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+const isTsRuntime = __filename.endsWith('.ts');
+
 const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST,
@@ -12,10 +14,9 @@ const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
 
-  // Support both ts-node (src/*.ts) and compiled runtime (dist/*.js).
-  entities: ['src/**/*.entity.ts', 'dist/**/*.entity.js'],
+  entities: isTsRuntime ? ['src/**/*.entity.ts'] : ['dist/**/*.entity.js'],
 
-  migrations: ['db/migrations/*.ts', 'dist/db/migrations/*.js'],
+  migrations: isTsRuntime ? ['db/migrations/*.ts'] : ['dist/db/migrations/*.js'],
 
   // migrations: isProd
   //   ? ['dist/migrations/*.js'] // production
